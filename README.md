@@ -10,7 +10,7 @@ Auto car project
  - 설명 예시는 driveLine, curveLine 파일에 있으니 참조 바랍니다.
  - 각 함수는 flag를 통해 실행이 가능합니다.
  - flag 조건에 대한 부분은 각자 만들어 주시기 바랍니다.
- 
+
 2. git사용
  - 이번 git 구조는 Centralized Flow 이므로 각자의 branch는 없습니다.
  - 각자의 내용을 push하기 전 먼저 git pull을 통해 데이터를 업데이트 해주십시오.
