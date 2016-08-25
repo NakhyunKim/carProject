@@ -2,6 +2,7 @@
 Auto car project
 
 자율주행 프로젝트를 위한 git입니다.
+
 1. 개발
  - 개발은 cpatureOpenCV.c에서 이루어 집니다.
  - 개발해야할 기능들은 captureOpenCV.c에 함수 틀을 만들어 놓았습니다.
