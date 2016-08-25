@@ -607,7 +607,7 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
                 left=k;
                 break;
             }
-        }
+        } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
 
         for( k = (resWidth / 2) ; k< resWidth ; k++)
         {
@@ -616,17 +616,19 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
                 right=k;
                 break;
             }
-
-        }
+        } // 
 
         if(left != 0 && right !=0)
         {
+            //TODO 코너 검출 방법 바꿔줘야함
             if(j < (resHeight/3)*2 && j > resHeight/2)
                 corner_check++;
-            center=(right+left)/2;
-            center_total += center;
-            center_num++;
+            // 화면의 1/2지점에서 2/3 지점까지의 center pixel개수를 센다. 만약 일정 수 미만이면 코너 인식
+            center=(right+left)/2;  // 왼쪽과 오른쪽 pixel의 중간값을 계산 = center값
+            center_total += center; // center값의 총 합을 더한다.
+            center_num++;           // center값의 총합에 center값의 총 수를 나눠 주기 위해 개수를 센다.
             imgCenter->imageData[j*imgCenter->widthStep + center] = (char)255;
+                                    // center가 어딘지를 확인하기 위해 영상에 저장
         }
     }
 
@@ -920,16 +922,17 @@ void *ControlThread(void *unused)
 
         pthread_mutex_unlock(&mutex);     
 
-        cvCvtColor(imgOrigin, RGB , CV_YUV2BGR);
+        cvCvtColor(imgOrigin, RGB , CV_YUV2BGR);    // YUv값을 rgb로 변환
+
         sprintf(fileName4, "captureImage/imgRGB%d.png", i);
         sprintf(fileName5, "captureImage/imgResult%d.png", i);
         sprintf(fileName6, "captureImage/imgYUV%d.png", i);
-        sprintf(fileName7, "captureImage/imgCenter%d.png", i);
+        sprintf(fileName7, "captureImage/imgCenter%d.png", i);  // 이미지파일 이름 지정
 
         cvSaveImage(fileName4, RGB, 0);
         cvSaveImage(fileName5, imgResult, 0);
         cvSaveImage(fileName6, imgOrigin, 0);
-        cvSaveImage(fileName7, imgCenter, 0);
+        cvSaveImage(fileName7, imgCenter, 0);       // 이미지파일 저장
 
         // TODO : control steering angle based on captured image ---------------
         /*
@@ -1345,7 +1348,7 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
             curve_flag = 0;
             break;
         }
-    }
+    }   //최초의 width값 검출
 
     for(j = 0; j < 20; j++)
     {
@@ -1367,25 +1370,20 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     curve_temp = 675;  //곡선 인식 후 코너 진입점 까지 주행
 
 
-    // 각 코너별 flag 만들어서 진행!!!!
+    //TODO 각 코너별 flag 만들어서 진행!!!!
     if(last_width<(resWidth/2))
     {
-
         printf("--------------RIGHT---------------------\n");
-
         //				CameraXServoControl_Write(1270);
         UserMove(1, 1000, curve_temp);
         printf("---------------------------------finish!\n");
-
     } //오른쪽으로 회전 
     else
     {	
         printf("---------------LEFT---------------------\n");
-
         //				CameraXServoControl_Write(1670);
         UserMove(1, 1950, curve_temp);
         printf("---------------------------------finish!\n");
-
     } // 왼쪽으로 회전
 
     encoder_value=0;
