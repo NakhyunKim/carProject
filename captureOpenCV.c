@@ -600,6 +600,8 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     center_total = 0;
     center_num = 1;
     corner_check = 0;
+    left_gap = 0;
+    right_gap = 0;
 
     for(j =(resHeight/3); j < resHeight; j++)
     {
@@ -648,12 +650,13 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
         } // 
         right_gap = max - min;
 
+        printf("left_gap : %d right_gap : %d\n");
+
         flag = 0;
         min = 320;
         max = 0;
         if(left != 0 && right !=0)
         {
-            //TODO 코너 검출 방법 바꿔줘야함
             if(j < (resHeight/3)*2 && j > resHeight/2)
                 corner_check++;
             // 화면의 1/2지점에서 2/3 지점까지의 center pixel개수를 센다. 만약 일정 수 미만이면 코너 인식
