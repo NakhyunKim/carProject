@@ -610,47 +610,20 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
         {           
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
-                switch(flag)
-                {
-                    case 0:
-                        left=k;
-                        flag++;
-                        break;
-                    default:                    
-                        min = MIN(k, min);
-                        max = MAX(k, max);
-                        //왼쪽 선에 대한 최대최소 구하기
-                        break;
-                }
+                left=k;
+                break;
             }
         } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
-        left_gap = max - min;
 
-        flag = 0;
-        min = 320;
-        max = 0;
         for( k = (resWidth / 2) ; k< resWidth ; k++)
         {
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
-                switch(flag)
-                {
-                    case 0:
-                        right=k;
-                        flag++;
-                        break;
-                    default:
-                        min = MIN(k, min);
-                        max = MAX(k, max);
-                        break;
-                }
+                right=k;
+                break;
             }
         } // 
-        right_gap = max - min;
 
-        flag = 0;
-        min = 320;
-        max = 0;
         if(left != 0 && right !=0)
         {
             //TODO 코너 검출 방법 바꿔줘야함
@@ -1404,6 +1377,7 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 
 
     //TODO 각 코너별 flag 만들어서 진행!!!!
+    //if문 안에 조건이 바뀌어야 함
     if(last_width<(resWidth/2))
     {
         printf("--------------RIGHT---------------------\n");
