@@ -48,6 +48,7 @@
 
 // function define
 void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width);  
+int searchCurveDirection(int left_width, int left_height, int right_width, int right_width, iplimage* imgresult);
 void driveLine();
 void emergStop();
 void parkFirst();
@@ -637,7 +638,6 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
                                     // center가 어딘지를 확인하기 위해 영상에 저장
         }
     }
-
     NvMediaVideoSurfaceUnlock(capSurf);
 
     return 1;
@@ -1309,15 +1309,19 @@ fail: // Run down sequence
     return err;
 }
 
-void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
+void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
 {
     int curve_flag, curve_temp, sub_center, steer_angle;
     int j, k;
+    int flag = 0;
+    int left_width, left_height;
+    int right_width, right_height;
+    int direction;
 
     curve_flag=0;
 
     printf("Corner in!!!!!!!!!!!!!!!!!!!\n");
-
+/*
     for(j = resHeight-1; j >= 0; j--)
     {
         for(k = resWidth-1; k >= 0; k--)
@@ -1355,6 +1359,58 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
             break;
         }
     }   //최초의 width값 검출
+*/
+    for(j =resHeight; j < resHeight/2; j--)
+    {
+        left_width = 0;
+        right = 0;
+        center =0;
+        for( k = (resWidth / 2) ; k >0 ; k--)
+        {           
+            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
+            {
+                left_width=k;
+                left_height=j;
+                flag = 1;
+                break;
+            }
+        } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
+        if(flag == 1) break;
+    }
+
+    if(flag == 0) {
+        left_width = 0;
+        left_height = 320;
+    }   //점을 찾지 못했을 때 값을 넣어준다.
+
+    flag = 0;
+
+    for(j =resHeight; j < resHeight/2; j--)
+    {
+        for( k = (resWidth / 2) ; k< resWidth ; k++)
+        {
+            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
+            {
+                right_width=k;
+                right_height=j;
+                flag = 1;
+                break;
+            }
+        } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
+        if(flag == 1) break;
+    }
+    
+    if(flag == 0) {
+        right_width = 240;
+        right_height = 320;
+    } //점을 찾지 못했을 때 값을 넣어준다.
+
+    printf("left_width : %d left_height : %d right_width :%d  right_width : %d\n", left_width, left_height, right_width, right_width);
+
+    direction = searchCurveDirection(left_width, left_height, right_width, right_width, imgresult); 
+
+    if(direction) last_height = left_height;
+    else last_height = right_height;
 
     for(j = 0; j < 20; j++)
     {
@@ -1378,14 +1434,14 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 
     //TODO 각 코너별 flag 만들어서 진행!!!!
     //if문 안에 조건이 바뀌어야 함
-    if(last_width<(resWidth/2))
+    if(direction == 1)
     {
         printf("--------------RIGHT---------------------\n");
         //				CameraXServoControl_Write(1270);
         UserMove(1, 1000, curve_temp);
         printf("---------------------------------finish!\n");
     } //오른쪽으로 회전 
-    else
+    else if(direction == 0)
     {	
         printf("---------------LEFT---------------------\n");
         //				CameraXServoControl_Write(1670);
@@ -1394,6 +1450,59 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     } // 왼쪽으로 회전
 
     encoder_value=0;
+}
+
+int searchCurveDirection(int left_width, int left_height, int right_width, int right_width, iplimage* imgresult)
+{
+    int check_check;
+    int i = 0;
+    int left_width_direction[3] = {1, 1, 0};
+    int left_height_direction[3] = {0, -1, -1};
+    int right_width_direction[3] = {-1, -1, 0};
+    int right_height_direction[3] = {0, -1, -1};
+    int left_cnt = 0, right_cnt = 0;
+    
+    check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
+
+    while(check_check == 255) 
+    {
+        while(i < 3)
+        {
+            check_check = imgResult->imageData[(left_height + left_height_direction[i])*imgResult->widthStep + (left_width + left_width_direction[i])];
+            if(check_check == 255)
+            {
+                left_cnt++;
+                left_height += left_height_direction[i];
+                left_width += left_width_direction[i]
+                break;
+            }
+            i++;
+        }
+        if(check_check == 0) break;
+    } // 좌측 곡선 따라가면 pixel유무 확인
+
+    check_check = imgResult->imageData[right_height*imgResult->widthStep + right_width];
+
+    i = 0;
+    while(check_check == 255) 
+    {
+        while(i < 3)
+        {
+            check_check = imgResult->imageData[(right_height + right_height_direction[i])*imgResult->widthStep + (right_width + right_width_direction[i])];
+            if(check_check == 255)
+            {
+                right_cnt++;
+                right_height += right_height_direction[i];
+                right_width += right_width_direction[i]
+                break;
+            }
+            i++;
+        }
+        if(check_check == 0) break;
+    } // 우측 곡선 따라가며 pixel유무 확인
+
+    if(left_cnt > right_cnt) return 1;
+    else return 0;
 }
 
 void driveLine()
