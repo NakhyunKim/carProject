@@ -1457,10 +1457,10 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
     int check_check;
     int i = 0;
     int left_width_direction[3] = {1, 1, 0};
-    int left_height_direction[3] = {0, -1, -1};
+    int left_height_direction[3] = {0, -1, -1}; //동, 북동, 북 쪽으로 움직이기 위한 변수
     int right_width_direction[3] = {-1, -1, 0};
-    int right_height_direction[3] = {0, -1, -1};
-    int left_cnt = 0, right_cnt = 0;
+    int right_height_direction[3] = {0, -1, -1};//동, 북동, 북 쪽으로 움직이기 위한 변수
+    int left_cnt = 0, right_cnt = 0;            //몇칸을 이동하는지 count
     
     check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
 
@@ -1475,7 +1475,7 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
                 left_height += left_height_direction[i];
                 left_width += left_width_direction[i]
                 break;
-            }
+            } // 흰점 발견하면 
             i++;
         }
         if(check_check == 0) break;
