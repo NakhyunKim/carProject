@@ -10,13 +10,14 @@
 
 CC = gcc
 
-TARGETS = captureOpenCV
-
+#TARGETS = captureOpenCV
+TARGETS = light
 OPT = -Os -O2
 CFLAGS   = $(OPT) -Wall -I. -I./utils `pkg-config opencv --cflags`
 CPPFLAGS = -I./include
 
-OBJS := captureOpenCV.o
+#OBJS := captureOpenCV.o
+OBJS := light.o
 OBJS += nvthread.o
 
 LDLIBS :=

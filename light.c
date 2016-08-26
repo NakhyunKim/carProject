@@ -664,7 +664,8 @@ void *ControlThread(void *unused)
     //jjy
     int state;
     int front_dis;
-    int distace = 1100;
+    int distance = 1100;
+    int speed, angle, temp;
     IplImage* imgOrigin;
     IplImage* imgResult;
     unsigned char status;
@@ -731,10 +732,11 @@ void *ControlThread(void *unused)
         //speed set    
         speed = DesireSpeed_Read();
         printf("DesireSpeed_Read() = %d \n", speed);
+        printf("%d\n", greenlight);
         //speed = -10;
         //DesireSpeed_Write(speed);
         if(flag == 1){ // RIGHT
-            if(greenlight>1000)
+            if(greenlight>500)
             {
                 printf("right go\n");
                 Winker_Write(LEFT_ON);
@@ -760,6 +762,18 @@ void *ControlThread(void *unused)
                 distance = 1000*18/10;
                 front_dis = distance+30;
 
+
+ 			DesireEncoderCount_Write(300);
+ 			SteeringServoControl_Write(1460);
+                temp = 300;
+
+                while(temp>31)
+                {
+                    temp = DesireEncoderCount_Read();
+                    usleep(500);
+                }
+			EncoderCounter_Write(0);
+
                 DesireEncoderCount_Write(front_dis);
 
                 temp = front_dis;
@@ -767,15 +781,21 @@ void *ControlThread(void *unused)
                 while(temp>31)
                 {
                     temp = DesireEncoderCount_Read();
-                    //if(temp>1450)  
-                    angle = 1460; 
-                        SteeringServoControl_Write(angle);
-                   // else  SteeringServoControl_Write(1000);
+                    printf("[temp] %d\n", temp);
+                    if(temp>720)                     
+                    	SteeringServoControl_Write(1000);
+                   	else  
+                   		SteeringServoControl_Write(1460);
                     usleep(500);
                 }
 
                 PositionControlOnOff_Write(UNCONTROL);
                 DesireSpeed_Write(state);
+                sleep(1);
+
+
+                DesireSpeed_Write(0);
+                SpeedControlOnOff_Write(UNCONTROL);
 
                 /*
                 angle = 1400;
@@ -792,7 +812,7 @@ void *ControlThread(void *unused)
             {
                 printf("left go\n");
                 Winker_Write(RIGHT_ON);
-                usleep(10000);
+                usleep(1000000);
                 Winker_Write(ALL_OFF);
 
                 state = SpeedControlOnOff_Read();
@@ -811,24 +831,44 @@ void *ControlThread(void *unused)
 
                 EncoderCounter_Write(0);
 
-                distance=1000*18/10;
+                distance = 1100*18/10;
                 front_dis = distance+30;
 
+
+ 			DesireEncoderCount_Write(300);
+ 			SteeringServoControl_Write(1460);
+                temp = 300;
+
+                while(temp>31)
+                {
+                    temp = DesireEncoderCount_Read();
+                    usleep(500);
+                }
+			EncoderCounter_Write(0);
+
                 DesireEncoderCount_Write(front_dis);
+
                 temp = front_dis;
 
                 while(temp>31)
                 {
                     temp = DesireEncoderCount_Read();
-                    //if(temp>1450)   SteeringServoControl_Write(1460);
-                    //else    
-                    angle = 1000;        
-                    SteeringServoControl_Write(angle);
+                    printf("[temp] %d\n", temp);
+                    if(temp>700)                     
+                    	SteeringServoControl_Write(1950);
+                   	else  
+                   		SteeringServoControl_Write(1460);
                     usleep(500);
                 }
 
                 PositionControlOnOff_Write(UNCONTROL);
                 DesireSpeed_Write(state);
+                sleep(1);
+
+
+                DesireSpeed_Write(0);
+                SpeedControlOnOff_Write(UNCONTROL);
+                return 0;
                 /*
                 speed = 20;
                 DesireSpeed_Write(speed);
