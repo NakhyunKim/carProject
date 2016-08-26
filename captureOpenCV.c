@@ -98,6 +98,8 @@ enum section
 };
 
 enum section main_flag;
+int left_gap;
+int right_gap;
 //~Nak
 
 typedef struct
@@ -488,6 +490,8 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     int num;
     unsigned char y,u,v;
     int start_cnt = 0;
+    int left_flag = 0;
+    int right_flag = 0;
 
     if(NvMediaVideoSurfaceLock(capSurf, &surfMap) != NVMEDIA_STATUS_OK)
     {
@@ -510,6 +514,8 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     int min;
     int flag = 0;
     int tmp_center = 0;
+    int max = 0;
+    int min = 320;
     //~Nak
     resWidth = RESIZE_WIDTH;
     resHeight = RESIZE_HEIGHT;
@@ -604,20 +610,47 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
         {           
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
-                left=k;
-                break;
+                switch(flag)
+                {
+                    case 0:
+                        left=k;
+                        flag++;
+                        break;
+                    default:                    
+                        min = MIN(k, min);
+                        max = MAX(k, max);
+                        //왼쪽 선에 대한 최대최소 구하기
+                        break;
+                }
             }
         } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
+        left_gap = max - min;
 
+        flag = 0;
+        min = 320;
+        max = 0;
         for( k = (resWidth / 2) ; k< resWidth ; k++)
         {
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
-                right=k;
-                break;
+                switch(flag)
+                {
+                    case 0:
+                        right=k;
+                        flag++;
+                        break;
+                    default:
+                        min = MIN(k, min);
+                        max = MAX(k, max);
+                        break;
+                }
             }
         } // 
+        right_gap = max - min;
 
+        flag = 0;
+        min = 320;
+        max = 0;
         if(left != 0 && right !=0)
         {
             //TODO 코너 검출 방법 바꿔줘야함
