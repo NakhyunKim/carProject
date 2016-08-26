@@ -1,4 +1,7 @@
-
+/*
+ * gcc -o stop stop.c
+ * set initialzed data
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include "car_lib.h"
