@@ -1404,7 +1404,9 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 
 
     //TODO 각 코너별 flag 만들어서 진행!!!!
-    if(last_width<(resWidth/2))
+    //    if(last_width<(resWidth/2))
+    printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
+    if(left_gap > right_gap)
     {
         printf("--------------RIGHT---------------------\n");
         //				CameraXServoControl_Write(1270);
