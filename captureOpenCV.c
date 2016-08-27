@@ -103,6 +103,7 @@ int left_gap;
 int right_gap;
 int last_left_height, last_right_height;
 int curve_steer_angle;
+int encoder_flag; 
 //~Nak
 
 typedef struct
@@ -212,26 +213,26 @@ void UserMove(int direction, int steer,int distance)
 
     printf("distance : %d\n",distance);
 
-    distance = distance*18/10;
+    distance = distance*1853/1000;
     printf("***************************************\n");
     EncoderCounter_Write(0);
 
     if(direction == 1)
     {
         DesireEncoderCount_Write(distance);
-        //temp = DesireEncoderCount_Read();
-        //temp = distance;
-        /*
+        temp = DesireEncoderCount_Read();
+        temp = distance;
 		while(temp>20)
         {
             temp = DesireEncoderCount_Read();
         }
-		*/
+		/*
 		while(abs(temp-distance)>5)
 		{
 			temp = EncoderCounter_Read();
 			if(temp > distance+10)	break;
 		}
+		*/
     }
     else
     {
@@ -988,8 +989,11 @@ void *ControlThread(void *unused)
 
         flag = 100;
 
+		printf("corner_check : %d\n", corner_check);
         if(corner_check <= 4) //4이하일 때만 코너 인식
+        {
             flag = CURVLINE;
+        }
 //        else if(/*red_pixel > ? */)
 //            flag = EMERGSTOP;           //Frame2Ipl에서 red pixel값을 읽어서 check
 //        else if(/*parkFirst condition*/)
@@ -1009,6 +1013,7 @@ void *ControlThread(void *unused)
         switch(flag){
             case CURVLINE:
                 curveLine(resHeight, resWidth, imgResult, last_width);  // 코너주행
+                encoder_flag = 0;
                 break;
             case EMERGSTOP:
                 emergStop();
@@ -1032,6 +1037,7 @@ void *ControlThread(void *unused)
                 hill();
                 break;
             default:
+                encoder_flag = 1;
                 driveLine();
                 break;
         }
@@ -1378,9 +1384,10 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 
     direction = searchCurveDirection(left_width, left_height, right_width, right_height, imgResult); 
 
-    if(direction) last_height = last_left_height;
-    else last_height = last_right_height;
+    if(direction) last_height = left_height;
+    else last_height = right_height;
 
+	printf("direction : %d last_height : %d\n", direction, last_height);
     for(j = 0; j < 20; j++)
     {
         if(distance_table[j][1] >= last_height )
@@ -1396,9 +1403,21 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
             }
         }
     } //Table에서 움직인 거리 읽어옴
-	
-	printf("encoder_value : %d, curve_steer_angle : %d\n", encoder_value, curve_steer_angle);
-    UserMove(1, curve_steer_angle, encoder_value);
+
+	printf("encoder_value : %d\n", encoder_value);
+    if(encoder_flag)
+        UserMove(1, 1470, 10*encoder_value);
+
+    if(direction) 
+    {
+        SteeringServoControl_Write(1000);
+        //encoder값 까지 가기
+    }
+    else 
+    {
+        SteeringServoControl_Write(1950);
+        //encoder값 까지 가기
+    }
 }
 
 int searchCurveDirection(int left_width, int left_height, int right_width, int right_height, IplImage* imgResult)
@@ -1483,10 +1502,6 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 		printf("line: %0.2f\n",line);
         printf("width : %d height : %d\n", center_left_width, center_left_height);
 		*/
-        last_left_height = center_left_height;
-
-        sub_center = 160 - center_left_width; 
-        curve_steer_angle += 4*sub_center;
         return 1;
 	}
     else
@@ -1504,13 +1519,10 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 		printf("line: %0.2f\n",line);
 		printf("width : %d, height : %d\n", center_right_width, center_right_height);
 		*/
-        last_right_height = center_right_height;
-
-        sub_center = 160 - center_right_width; 
-        curve_steer_angle += 4*sub_center;
 		return 0;
 	}
 }
+
 void driveLine()
 {
     int sub_center, steer_angle; 
