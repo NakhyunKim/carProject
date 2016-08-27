@@ -217,7 +217,7 @@ void UserMove(int direction, int steer,int distance)
         DesireEncoderCount_Write(distance);
         //temp = DesireEncoderCount_Read();
         temp = distance;
-        while(temp>30)
+        while(temp>20)
         {
             temp = DesireEncoderCount_Read();
         }
@@ -599,8 +599,6 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     center_total = 0;
     center_num = 1;
     corner_check = 0;
-    left_gap = 0;
-    right_gap = 0;
 
     for(j =(resHeight/3); j < resHeight; j++)
     {
@@ -626,6 +624,7 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
             }
         } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
         left_gap = max - min;
+        if(left_gap < 0) left_gap = 0;
 
         flag = 0;
         min = 320;
@@ -648,8 +647,9 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
             }
         } // 
         right_gap = max - min;
+        if(right_gap < 0) right_gap = 0;
 
-        //printf("left_gap : %d right_gap : %d\n");
+        printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
 
         flag = 0;
         min = 320;
@@ -954,6 +954,7 @@ void *ControlThread(void *unused)
         {
             DesireSpeed_Write(0);
         }
+        printf("ControlThread left : %d right : %d\n", left_gap, right_gap);
 
         pthread_mutex_unlock(&mutex);     
 
@@ -1030,7 +1031,6 @@ void *ControlThread(void *unused)
                 printf("curve switch In!!\n");
                 curveLine(resHeight, resWidth, imgResult, last_width);  // 코너주행
                 SteeringServoControl_Write(1478);
-                printf("left : %d right : %d\n", left_gap, right_gap);
                 break;
             case EMERGSTOP:
                 emergStop();
@@ -1346,9 +1346,6 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     int curve_flag, curve_temp, sub_center, steer_angle;
     int j, k;
     
-    left_gap = 0;
-    right_gap = 0;
-
     curve_flag=0;
 
     printf("Corner in!!!!!!!!!!!!!!!!!!!\n");
@@ -1397,7 +1394,7 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
         {
             if(distance_table[j+1][1] < last_height)
             {
-                encoder_value = distance_table[j][0]+38;
+                encoder_value = distance_table[j][0]+26;
                 //Nak
                 printf("Stop!!!\n");
             //    printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
@@ -1407,14 +1404,14 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
         }
     } //Table에서 움직인 거리 읽어옴
 
-    UserMove(1, 1470, encoder_value*10);
+    UserMove(1, 1470, encoder_value*9);
 
     curve_temp = 630;  //곡선 인식 후 코너 진입점 까지 주행
 
 
     //TODO 각 코너별 flag 만들어서 진행!!!!
     //    if(last_width<(resWidth/2))
-//    printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
+    printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
     if(left_gap > right_gap)
     {
         printf("--------------RIGHT---------------------\n");
@@ -1430,6 +1427,8 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
         printf("---------------------------------finish!\n");
     } // 왼쪽으로 회전
 
+    left_gap = 0;
+    right_gap = 0;
     encoder_value=0;
 }
 
