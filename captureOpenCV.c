@@ -48,7 +48,7 @@
 
 // function define
 void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width);  
-int searchCurveDirection(int left_width, int left_height, int right_width, int right_width, iplimage* imgresult);
+int searchCurveDirection(int left_width, int left_height, int right_width, int right_height, IplImage* imgResult);
 void driveLine();
 void emergStop();
 void parkFirst();
@@ -512,7 +512,6 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     //Nak Add
     int temp1;
     int temp2;
-    int min;
     int flag = 0;
     int tmp_center = 0;
     int max = 0;
@@ -981,20 +980,20 @@ void *ControlThread(void *unused)
 
         if(corner_check <= 4) //4이하일 때만 코너 인식
             flag = CURVLINE;
-        else if(/*red_pixel > ? */)
-            flag = EMERGSTOP;           //Frame2Ipl에서 red pixel값을 읽어서 check
-        else if(/*parkFirst condition*/)
-            flag = PARKFIRST;           //미정
-        else if(/*parkSecond*/)
-            flag = PARKSECOND;          //미정
-        else if(/*First Linetrace*/)
-            flag = INTERSECTION;        //linetrace를 통해 하얀선 인식
-        else if(/*gray_pixel*/)
-            flag = OVERTAKING;          //Frame2Ipl에서 gray pixel값을 읽어서 check
-        else if(/*Second Linetrace*/)
-            flag = TRAFFICLIGHT;        //linetrace를 통해 하얀선 인식
-        else if(/*hill*/)
-            flag = HILL;                //미정
+//        else if(/*red_pixel > ? */)
+//            flag = EMERGSTOP;           //Frame2Ipl에서 red pixel값을 읽어서 check
+//        else if(/*parkFirst condition*/)
+//            flag = PARKFIRST;           //미정
+//        else if(/*parkSecond*/)
+//            flag = PARKSECOND;          //미정
+//        else if(/*First Linetrace*/)
+//            flag = INTERSECTION;        //linetrace를 통해 하얀선 인식
+//        else if(/*gray_pixel*/)
+//            flag = OVERTAKING;          //Frame2Ipl에서 gray pixel값을 읽어서 check
+//        else if(/*Second Linetrace*/)
+//            flag = TRAFFICLIGHT;        //linetrace를 통해 하얀선 인식
+//        else if(/*hill*/)
+//            flag = HILL;                //미정
 
         //switch()
         switch(flag){
@@ -1309,7 +1308,7 @@ fail: // Run down sequence
     return err;
 }
 
-void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
+void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 {
     int curve_flag, curve_temp, sub_center, steer_angle;
     int j, k;
@@ -1360,12 +1359,12 @@ void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
         }
     }   //최초의 width값 검출
 */
-    for(j =resHeight; j < resHeight/2; j--)
+    for(j =resHeight-1; j > resHeight/3; j--)
     {
-        left_width = 0;
-        right = 0;
-        center =0;
-        for( k = (resWidth / 2) ; k >0 ; k--)
+        //left_width = 0;
+        //right = 0;
+        //center =0;
+        for( k = (resWidth / 2) ; k >=0 ; k--)
         {           
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
@@ -1380,12 +1379,12 @@ void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
 
     if(flag == 0) {
         left_width = 0;
-        left_height = 320;
+        left_height = 319;
     }   //점을 찾지 못했을 때 값을 넣어준다.
 
     flag = 0;
 
-    for(j =resHeight; j < resHeight/2; j--)
+    for(j =resHeight-1; j > resHeight/3; j--)
     {
         for( k = (resWidth / 2) ; k< resWidth ; k++)
         {
@@ -1401,13 +1400,13 @@ void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
     }
     
     if(flag == 0) {
-        right_width = 240;
-        right_height = 320;
+        right_width = 239;
+        right_height = 319;
     } //점을 찾지 못했을 때 값을 넣어준다.
 
-    printf("left_width : %d left_height : %d right_width :%d  right_width : %d\n", left_width, left_height, right_width, right_width);
+    printf("left_width : %d left_height : %d right_width :%d  right_height : %d\n", left_width, left_height, right_width, right_height);
 
-    direction = searchCurveDirection(left_width, left_height, right_width, right_width, imgresult); 
+    direction = searchCurveDirection(left_width, left_height, right_width, right_height, imgResult); 
 
     if(direction) last_height = left_height;
     else last_height = right_height;
@@ -1452,7 +1451,7 @@ void curveLine(int resHeight, int resWidth, iplimage* imgresult, int last_width)
     encoder_value=0;
 }
 
-int searchCurveDirection(int left_width, int left_height, int right_width, int right_width, iplimage* imgresult)
+int searchCurveDirection(int left_width, int left_height, int right_width, int right_height, IplImage* imgResult)
 {
     int check_check;
     int i = 0;
@@ -1463,17 +1462,20 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
     int left_cnt = 0, right_cnt = 0;            //몇칸을 이동하는지 count
     
     check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
+    printf("l check : %d\n", check_check);
 
     while(check_check == 255) 
     {
         while(i < 3)
         {
             check_check = imgResult->imageData[(left_height + left_height_direction[i])*imgResult->widthStep + (left_width + left_width_direction[i])];
+            printf("l2 check : %d\n", check_check);
+
             if(check_check == 255)
             {
                 left_cnt++;
                 left_height += left_height_direction[i];
-                left_width += left_width_direction[i]
+                left_width += left_width_direction[i];
                 break;
             } // 흰점 발견하면 
             i++;
@@ -1482,6 +1484,7 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
     } // 좌측 곡선 따라가면 pixel유무 확인
 
     check_check = imgResult->imageData[right_height*imgResult->widthStep + right_width];
+    printf("r check : %d\n", check_check);
 
     i = 0;
     while(check_check == 255) 
@@ -1489,17 +1492,21 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
         while(i < 3)
         {
             check_check = imgResult->imageData[(right_height + right_height_direction[i])*imgResult->widthStep + (right_width + right_width_direction[i])];
+            printf("r2 check : %d\n", check_check);
+
             if(check_check == 255)
             {
                 right_cnt++;
                 right_height += right_height_direction[i];
-                right_width += right_width_direction[i]
+                right_width += right_width_direction[i];
                 break;
             }
             i++;
         }
         if(check_check == 0) break;
     } // 우측 곡선 따라가며 pixel유무 확인
+
+    printf("left_cnt : %d right_cnt : %d\n", left_cnt, right_cnt);
 
     if(left_cnt > right_cnt) return 1;
     else return 0;
