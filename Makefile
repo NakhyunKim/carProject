@@ -35,4 +35,5 @@ $(TARGETS): $(OBJS)
 
 clobber clean :
 	rm -rf $(TARGETS) $(OBJS)
+	rm -rf captureImage/*
 
