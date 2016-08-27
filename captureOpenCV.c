@@ -197,7 +197,7 @@ void UserMove(int direction, int steer,int distance)
     state = SpeedControlOnOff_Read();
     if(state == 0)
     {
-        DesireSpeed_Write(50);
+        DesireSpeed_Write(20);
         SpeedControlOnOff_Write(CONTROL);   // speedControl ON
     }
     state = PositionControlOnOff_Read();
@@ -217,7 +217,7 @@ void UserMove(int direction, int steer,int distance)
         DesireEncoderCount_Write(distance);
         //temp = DesireEncoderCount_Read();
         temp = distance;
-        while(temp>20)
+        while(temp>30)
         {
             temp = DesireEncoderCount_Read();
         }
@@ -511,7 +511,6 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     //Nak Add
     int temp1;
     int temp2;
-    int min;
     int flag = 0;
     int tmp_center = 0;
     int max = 0;
@@ -650,7 +649,7 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
         } // 
         right_gap = max - min;
 
-        printf("left_gap : %d right_gap : %d\n");
+        //printf("left_gap : %d right_gap : %d\n");
 
         flag = 0;
         min = 320;
@@ -1011,24 +1010,24 @@ void *ControlThread(void *unused)
 
         if(corner_check <= 4) //4이하일 때만 코너 인식
             flag = CURVLINE;
-        else if(/*red_pixel > ? */)
-            flag = EMERGSTOP;           //Frame2Ipl에서 red pixel값을 읽어서 check
-        else if(/*parkFirst condition*/)
-            flag = PARKFIRST;           //미정
-        else if(/*parkSecond*/)
-            flag = PARKSECOND;          //미정
-        else if(/*First Linetrace*/)
-            flag = INTERSECTION;        //linetrace를 통해 하얀선 인식
-        else if(/*gray_pixel*/)
-            flag = OVERTAKING;          //Frame2Ipl에서 gray pixel값을 읽어서 check
-        else if(/*Second Linetrace*/)
-            flag = TRAFFICLIGHT;        //linetrace를 통해 하얀선 인식
-        else if(/*hill*/)
-            flag = HILL;                //미정
-
-        //switch()
-        switch(flag){
+//        else if(/*red_pixel > ? */)
+//            flag = EMERGSTOP;           //Frame2Ipl에서 red pixel값을 읽어서 check
+//        else if(/*parkFirst condition*/)
+//           flag = PARKFIRST;           //미정
+//        else if(/*parkSecond*/)
+//            flag = PARKSECOND;          //미정
+//        else if(/*First Linetrace*/)
+//            flag = INTERSECTION;        //linetrace를 통해 하얀선 인식
+//        else if(/*gray_pixel*/)
+//            flag = OVERTAKING;          //Frame2Ipl에서 gray pixel값을 읽어서 check
+//        else if(/*Second Linetrace*/)
+//            flag = TRAFFICLIGHT;        //linetrace를 통해 하얀선 인식
+//        else if(/*hill*/)
+//            flag = HILL;                //미정
+//        //switch()
+       switch(flag){
             case CURVLINE:
+                printf("curve switch In!!\n");
                 curveLine(resHeight, resWidth, imgResult, last_width);  // 코너주행
                 break;
             case EMERGSTOP:
@@ -1053,6 +1052,7 @@ void *ControlThread(void *unused)
                 hill();
                 break;
             default:
+                printf("drive switch in!!\n");
                 driveLine();
                 break;
         }
@@ -1371,7 +1371,7 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     {
         for(k = resWidth-1; k >= 0; k--)
         {
-            if(tempResult->imageData[j*tempResult->widthStep + k] == (char) 255)
+            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
             {
                 //last_height = j;
                 last_width = k;
@@ -1392,10 +1392,10 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
         {
             if(distance_table[j+1][1] < last_height)
             {
-                encoder_value = distance_table[j][0]+31;
+                encoder_value = distance_table[j][0]+38;
                 //Nak
                 printf("Stop!!!\n");
-                printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
+            //    printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
                 //~Nak
                 break;
             }
@@ -1403,12 +1403,13 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     } //Table에서 움직인 거리 읽어옴
 
     UserMove(1, 1470, encoder_value*10);
-    curve_temp = 675;  //곡선 인식 후 코너 진입점 까지 주행
+
+    curve_temp = 630;  //곡선 인식 후 코너 진입점 까지 주행
 
 
     //TODO 각 코너별 flag 만들어서 진행!!!!
     //    if(last_width<(resWidth/2))
-    printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
+//    printf("left_gap : %d right_gap : %d\n", left_gap, right_gap);
     if(left_gap > right_gap)
     {
         printf("--------------RIGHT---------------------\n");
