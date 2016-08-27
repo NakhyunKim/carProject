@@ -101,6 +101,8 @@ enum section
 enum section main_flag;
 int left_gap;
 int right_gap;
+int last_left_height, last_right_height;
+int curve_steer_angle;
 //~Nak
 
 typedef struct
@@ -1308,6 +1310,7 @@ fail: // Run down sequence
     return err;
 }
 
+
 void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 {
     int curve_flag, curve_temp, sub_center, steer_angle;
@@ -1320,50 +1323,9 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     curve_flag=0;
 
     printf("Corner in!!!!!!!!!!!!!!!!!!!\n");
-/*
-    for(j = resHeight-1; j >= 0; j--)
-    {
-        for(k = resWidth-1; k >= 0; k--)
-        {
-            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
-            {
-                last_height = j;
-                //last_width = k;
-                curve_flag++;
-                break;
-            }
-        }
-        if(curve_flag!=0)
-        {
-            curve_flag = 0;
-            break;
-        }
-    }   //영상 제일 작은 Height값 검출
 
-    for(j = resHeight-1; j >= 0; j--)
-    {
-        for(k = resWidth-1; k >= 0; k--)
-        {
-            if(tempResult->imageData[j*tempResult->widthStep + k] == (char) 255)
-            {
-                //last_height = j;
-                last_width = k;
-                curve_flag++;
-                break;
-            }
-        }
-        if(curve_flag!=0)
-        {
-            curve_flag = 0;
-            break;
-        }
-    }   //최초의 width값 검출
-*/
     for(j =resHeight-1; j > resHeight/3; j--)
     {
-        //left_width = 0;
-        //right = 0;
-        //center =0;
         for( k = (resWidth / 2) ; k >=0 ; k--)
         {           
             if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
@@ -1408,8 +1370,8 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 
     direction = searchCurveDirection(left_width, left_height, right_width, right_height, imgResult); 
 
-    if(direction) last_height = left_height;
-    else last_height = right_height;
+    if(direction) last_height = last_left_height;
+    else last_height = last_right_height;
 
     for(j = 0; j < 20; j++)
     {
@@ -1427,51 +1389,41 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
         }
     } //Table에서 움직인 거리 읽어옴
 
-    UserMove(1, 1470, encoder_value*10);
-    curve_temp = 675;  //곡선 인식 후 코너 진입점 까지 주행
-
-
-    //TODO 각 코너별 flag 만들어서 진행!!!!
-    //if문 안에 조건이 바뀌어야 함
-    if(direction == 1)
-    {
-        printf("--------------RIGHT---------------------\n");
-        //				CameraXServoControl_Write(1270);
-        UserMove(1, 1000, curve_temp);
-        printf("---------------------------------finish!\n");
-    } //오른쪽으로 회전 
-    else if(direction == 0)
-    {	
-        printf("---------------LEFT---------------------\n");
-        //				CameraXServoControl_Write(1670);
-        UserMove(1, 1950, curve_temp);
-        printf("---------------------------------finish!\n");
-    } // 왼쪽으로 회전
-
-    encoder_value=0;
+    UserMove(1, curve_steer_angle, encoder_value);
 }
 
 int searchCurveDirection(int left_width, int left_height, int right_width, int right_height, IplImage* imgResult)
 {
-    int check_check;
+    char check_check;
+	int init_right_width=right_width, init_right_height=right_height;//기울기 구하기 위한 초기값 변수
+	int init_left_width=left_width, init_left_height=left_height;//기울기 구하기 위한 초기값 변수
     int i = 0;
     int left_width_direction[3] = {1, 1, 0};
     int left_height_direction[3] = {0, -1, -1}; //동, 북동, 북 쪽으로 움직이기 위한 변수
     int right_width_direction[3] = {-1, -1, 0};
     int right_height_direction[3] = {0, -1, -1};//동, 북동, 북 쪽으로 움직이기 위한 변수
     int left_cnt = 0, right_cnt = 0;            //몇칸을 이동하는지 count
-    
-    check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
-    printf("l check : %d\n", check_check);
+	float angle;//구한 기울기 저장
+	int final_width;
+	int center_left_width, center_left_height, center_right_width, center_right_height;
+	int sub_center;
+	double line;
 
-    while(check_check == 255) 
+
+   // printf("%d %d \n", left_height,left_width);
+    check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
+
+   // printf("l check : %d\n ", check_check);
+
+    while(check_check == (char) 255) 
     {
+		i=0;
         while(i < 3)
         {
             check_check = imgResult->imageData[(left_height + left_height_direction[i])*imgResult->widthStep + (left_width + left_width_direction[i])];
-            printf("l2 check : %d\n", check_check);
+         //   printf("l2 check : %d\n", check_check);
 
-            if(check_check == 255)
+            if(check_check == (char) 255)
             {
                 left_cnt++;
                 left_height += left_height_direction[i];
@@ -1484,17 +1436,18 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
     } // 좌측 곡선 따라가면 pixel유무 확인
 
     check_check = imgResult->imageData[right_height*imgResult->widthStep + right_width];
-    printf("r check : %d\n", check_check);
+    //printf("r check : %d\n", check_check);
 
-    i = 0;
-    while(check_check == 255) 
+    
+    while(check_check == (char) 255) 
     {
+		i = 0;
         while(i < 3)
         {
             check_check = imgResult->imageData[(right_height + right_height_direction[i])*imgResult->widthStep + (right_width + right_width_direction[i])];
-            printf("r2 check : %d\n", check_check);
+        //    printf("r2 check : %d\n", check_check);
 
-            if(check_check == 255)
+            if(check_check == (char) 255)
             {
                 right_cnt++;
                 right_height += right_height_direction[i];
@@ -1507,11 +1460,44 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
     } // 우측 곡선 따라가며 pixel유무 확인
 
     printf("left_cnt : %d right_cnt : %d\n", left_cnt, right_cnt);
+	if(left_cnt > right_cnt) 
+	{
+		angle=(float)(left_height-init_left_height)/(float)(left_width-init_left_width);
+		line = sqrt(((double)(left_height-init_left_height)*(double)(left_height-init_left_height))+((double)(left_width-init_left_width)*(double)(left_width-init_left_width)));
+		center_left_width = (init_left_width+360)/2 ;
+		center_left_height = (init_left_height+240)/2;
+		printf("init_width: %d init_height: %d\n" , init_left_width,init_left_height);
+		printf("last_right_width:%d last_right_height: %d\n",left_width,left_height);
+		printf("center_left_width: %d center_left_height: %d\n",(init_left_width+left_width)/2,(init_left_height+left_height)/2);
+		printf("a:%0.2f\n" ,angle);
+		printf("line: %0.2f\n",line);
+        printf("width : %d height : %d\n", center_left_width, center_left_height);
+        last_left_height = center_left_height;
 
-    if(left_cnt > right_cnt) return 1;
-    else return 0;
+        sub_center = 160 - center_left_width; 
+        curve_steer_angle += 4*sub_center;
+        return 1;
+	}
+    else
+	{	
+		angle=(float)(right_height-init_right_height)/(float)(right_width-init_right_width);
+		line = sqrt(((double)(right_height-init_right_height)*(double)(right_height-init_right_height))+((double)(right_width-init_right_width)*(double)(right_width-init_right_width)));
+		center_right_width = (init_right_width+0)/2 ;
+		center_right_height = (init_right_height+240)/2;
+		final_width = -angle*(center_right_height - init_right_height) + center_right_width;
+    	printf("init_width: %d init_height: %d\n" , init_right_width,init_right_height);
+		printf("last_right_width:%d last_right_height: %d\n",right_width,right_height);
+		printf("center_right_width: %d center_right_height: %d\n",(init_right_width+right_width)/2,(init_right_height+right_height)/2);
+		printf("a:%0.2f\n" ,angle);
+		printf("line: %0.2f\n",line);
+		printf("width : %d, height : %d\n", center_right_width, center_right_height);
+        last_right_height = center_right_height;
+
+        sub_center = 160 - center_right_width; 
+        curve_steer_angle += 4*sub_center;
+		return 0;
+	}
 }
-
 void driveLine()
 {
     int sub_center, steer_angle; 
