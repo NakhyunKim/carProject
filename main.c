@@ -4,17 +4,9 @@
 #include <stdlib.h>
 #include "car_lib.h"
 
-
 // USER DEFINE ___________________________________________________
 //----------------------------------------------------------------
 /*
-#define LIGHT_BEEP		// to test light and beep
-#define SPEED_CONTROL		// to test speed control
-#define POSITION_CONTROL	// to test postion control
-#define SERVO_CONTROL		// to test servo control(steering & camera position)
-#define LINE_TRACE		// to test line trace sensor
-#define DISTANCE_SENSOR	// to test distance sensor
-*/
 #define PARAM_PI	3.14159//
 #define PARAM_CAR_WIDTH		190 //mm
 #define PARAM_CAR_LENGTH	330 //mm
@@ -24,12 +16,9 @@
 #define PARAM_CAR_STEP	195     //step per 1 rotate
 #define PARAM_CAR_DISTANCE_SENSOR_MAX	300//mm
 #define PARAM_CAR_DISTANCE_SENSOR_MIN	40//mm
-
+*/
 #define TRUE	1
 #define FALSE	0
-
-//#define SPEED_CONTROL		// to test speed control
-//#define POSITION_CONTROL	// to test postion control
 
 // Initialize Function ___________________________________________
 //----------------------------------------------------------------
@@ -69,30 +58,33 @@ void main(void)
 	   DesireSpeed_Write(0);   //speed = 0;
 	   SpeedControlOnOff_Write(UNCONTROL); //wheel off
 	*/
-	//DesireSpeed_Write(50);   //speed = 0;
-	//SpeedControlOnOff_Write(CONTROL); //wheel off
+	DesireSpeed_Write(50);   //speed = 0;
+	SpeedControlOnOff_Write(CONTROL); //wheel off
 
 
 
 	while(1)
 	{
+	/*	
 		avg = DistanceSensor(3);
-		tempdistance = DesireEncoderCount_Read();
-		printf("avg : %d, distance : %d\n",avg, 1500-tempdistance);
-		usleep(200);
-		
-		/*
+		printf("avg : %d \n",avg);
+		usleep(100000);
+	*/	
+	
 		temp = CheckParkingArea();
 		if(temp>200) 
 		{
-			horizon_parking();
+			//horizon_parking();
+			virtical_parking();
 			printf("----------------------end\n");
 			break;
 		}
-		*/
+	
 	}
+
 	sleep(3);
-	SteeringServoControl_Write(1460);
+	CarLight_Write(ALL_OFF);
+	SteeringServoControl_Write(1478);
 	DesireSpeed_Write(0);   //speed = 0;
 	SpeedControlOnOff_Write(UNCONTROL); //wheel off
 	sleep(1);
@@ -102,13 +94,13 @@ void main(void)
 //----------------------------------------------------------------
 void UserInit(void)
 {
-	SteeringServoControl_Write(1460);   //initialize Servo Center Position
+	SteeringServoControl_Write(1478);   //initialize Servo Center Position
 
 	SpeedPIDProportional_Write(20);     //speed -> P gain : default:10, range:10~50
 	SpeedPIDIntegral_Write(20);         //speed -> I gain : default:10, range:10~50
 	SpeedPIDDifferential_Write(20);     //speed -> D gain : default:10, range:10~50
 
-	PositionProportionPoint_Write(10);  //Encoder -> P gain : default:10, range:10~50
+	PositionProportionPoint_Write(8);  //Encoder -> P gain : default:10, range:10~50
 	DesireSpeed_Write(0);
 	EncoderCounter_Write(0);
 
@@ -195,10 +187,19 @@ void virtical_parking(void)
 
 	EncoderCounter_Write(0);
 
-	distance=1000*18/10;
-	front_dis = distance+30;
+	distance=1100*18/10;
+	front_dis = distance-430;
 	back_dis = -distance-30;
 
+	
+	DesireEncoderCount_Write(150);
+	temp = 150;
+	while(temp>30)
+	{
+		temp = DesireEncoderCount_Read();
+		usleep(50);
+	}
+	CarLight_Write(REAR_ON);
 	DesireEncoderCount_Write(back_dis);
 	temp = back_dis;
 
@@ -208,26 +209,33 @@ void virtical_parking(void)
 		if(temp<-800)	
 		{
 			SteeringServoControl_Write(1000);
-			Winker_Write(ALL_ON);
 		}
 		else		
 		{
-			SteeringServoControl_Write(1460);
+			SteeringServoControl_Write(1478);
 		}
 		usleep(500);
 	}
+	
+	CarLight_Write(ALL_OFF);
+	
+	sleep(1);
+
+	CarLight_Write(FRONT_ON);
 
 	DesireEncoderCount_Write(front_dis);
 	temp = front_dis;
 
-	while(temp>31)
+	while(temp>30)
 	{
 		temp = DesireEncoderCount_Read();
-		if(temp>1450)	SteeringServoControl_Write(1460);
+		if(temp>1080)	SteeringServoControl_Write(1478);
 		else			SteeringServoControl_Write(1000);
 		usleep(500);
 	}
 
+	CarLight_Write(ALL_OFF);
+	DesireSpeed_Write(state);
 	PositionControlOnOff_Write(UNCONTROL);
 	DesireSpeed_Write(state);
 }
@@ -327,14 +335,14 @@ int CheckParkingArea(void)
 
 	avg = DistanceSensor(3);
 	printf("_______data = %d\n",avg);
-	if(avg<500){
+	if(avg<200){
 		parkingarea_flag++;
 	}
 	else{
 		parkingarea_flag=0;
 	}
 
-	if(parkingarea_flag>2 && obstacle_flag>50)  //tempdata
+	if(parkingarea_flag>2 && obstacle_flag>25)  //tempdata
 	{    
 		PositionControlOnOff_Write(CONTROL);    // positionControl function ON 
 		state = DesireSpeed_Read();
@@ -347,12 +355,11 @@ int CheckParkingArea(void)
 		Winker_Write(ALL_ON);
 		while(tempdistance>30)
 		{
-			if(avg>1000)
+			if(avg>650)
 			{
 				ParkingAreaDistance = tempdistance;
 				obstacle_flag=0;
 				parkingarea_flag = 0;
-				Winker_Write(ALL_OFF);
 				printf("parking distance : %d\n",ParkingAreaDistance);
 				break;
 			}
@@ -365,12 +372,12 @@ int CheckParkingArea(void)
 			}
 
 		}
-
+		Winker_Write(ALL_OFF);
 		PositionControlOnOff_Write(UNCONTROL);
 		DesireSpeed_Write(state);
 	}
 
-	if(avg>800 && avg<4096)
+	if(avg>700 && avg<4096)
 	{
 		obstacle_flag++;
 	}

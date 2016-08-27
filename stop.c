@@ -35,7 +35,7 @@ void main(void)
 	Alarm_Write(ON);
 
 // led on/off
-	usleep(200000);//wait for 200ms
+	sleep(2);//wait for 200ms
 	CarLight_Write(ALL_OFF);
 	Alarm_Write(OFF);
     sleep(1);
