@@ -462,7 +462,7 @@ static int Frame2Ipl(IplImage* img, IplImage* result)
 
 	for(j = 0; j < resHeight; j++)  //<--------------------------------------------------------donghun
     {
-		for (k = resWidth / 2; k>0 <; k--)
+		for (k = resWidth / 2; k>0 ; k--)
             {
         		 if( (u >= 135) &&(u <= 141)  && v <= 128 && v >= 122) 
         		 	left_obstacle++;	
@@ -900,16 +900,16 @@ void OverTaking(int direction_flag)
     // int channel;
     // int data;
     // int k, j;
-	    if(direction==1) //we need to turn right
+	    if(direction_flag==1) //we need to turn right
         {
 
 			   printf("Right turn");
                 Winker_Write(LEFT_ON); //Right winker
 			    usleep(1000000);
-				UserMove(1000, 390 * 12, 80);
-				UserMove(1950, 390 * 12, 80);
+				UserMove(1000, 390 * 30, 80);
+				UserMove(1950, 390 * 30, 80);
 			    Winker_Write(ALL_OFF);
-				UserMove(1478, 390 * 25, 80);
+				UserMove(1478, 390 * 60, 80);
 
 				Winker_Write(RIGHT_ON); //Left winker
 				usleep(1000000);
@@ -926,14 +926,14 @@ void OverTaking(int direction_flag)
                 printf("Left turn");
 	            Winker_Write(RIGHT_ON); //Left winker
 				usleep(1000000);
-				UserMove(1950, 390 * 12, 80);
-				UserMove(1000, 390 * 12, 80);
+				UserMove(1950, 390 * 30, 80);
+				UserMove(1000, 390 * 30, 80);
 				Winker_Write(ALL_OFF);
-				UserMove(1478, 390 * 25, 80);
+				UserMove(1478, 390 * 60, 80);
 
 				Winker_Write(LEFT_ON); //Right winker
-				UserMove(1000, 390 * 12, 80);
-				UserMove(1950, 390 * 12, 80);
+				UserMove(1000, 390 * 30, 80);
+				UserMove(1950, 390 * 30, 80);
 				PositionControlOnOff_Write(UNCONTROL); // position controller OFF !!!
 				SteeringServoControl_Write(1478); //straight
 				Winker_Write(ALL_OFF);
