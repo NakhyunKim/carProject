@@ -196,6 +196,7 @@ void UserInit(void)
 void UserMove(int direction, int steer,int distance)
 {
     static int temp=0;
+	static int temp_pos = 0;
     int state  = 0;
     state = SpeedControlOnOff_Read();
     if(state == 0)
@@ -219,11 +220,18 @@ void UserMove(int direction, int steer,int distance)
     {
         DesireEncoderCount_Write(distance);
         //temp = DesireEncoderCount_Read();
-        temp = distance;
-        while(temp>20)
+        //temp = distance;
+        /*
+		while(temp>20)
         {
             temp = DesireEncoderCount_Read();
         }
+		*/
+		while(abs(temp-distance)>5)
+		{
+			temp = EncoderCounter_Read();
+			if(temp > distance+10)	break;
+		}
     }
     else
     {
@@ -1381,14 +1389,15 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
             {
                 encoder_value = distance_table[j][0]+31;
                 //Nak
-                printf("Stop!!!\n");
-                printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
+          //      printf("Stop!!!\n");
+          //      printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
                 //~Nak
                 break;
             }
         }
     } //Table에서 움직인 거리 읽어옴
-
+	
+	printf("encoder_value : %d, curve_steer_angle : %d\n", encoder_value, curve_steer_angle);
     UserMove(1, curve_steer_angle, encoder_value);
 }
 
@@ -1409,7 +1418,7 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 	int sub_center;
 	double line;
 
-
+	curve_steer_angle = 1478;
    // printf("%d %d \n", left_height,left_width);
     check_check = imgResult->imageData[left_height*imgResult->widthStep + left_width];
 
@@ -1466,12 +1475,14 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 		line = sqrt(((double)(left_height-init_left_height)*(double)(left_height-init_left_height))+((double)(left_width-init_left_width)*(double)(left_width-init_left_width)));
 		center_left_width = (init_left_width+360)/2 ;
 		center_left_height = (init_left_height+240)/2;
+		/*
 		printf("init_width: %d init_height: %d\n" , init_left_width,init_left_height);
 		printf("last_right_width:%d last_right_height: %d\n",left_width,left_height);
 		printf("center_left_width: %d center_left_height: %d\n",(init_left_width+left_width)/2,(init_left_height+left_height)/2);
 		printf("a:%0.2f\n" ,angle);
 		printf("line: %0.2f\n",line);
         printf("width : %d height : %d\n", center_left_width, center_left_height);
+		*/
         last_left_height = center_left_height;
 
         sub_center = 160 - center_left_width; 
@@ -1485,12 +1496,14 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 		center_right_width = (init_right_width+0)/2 ;
 		center_right_height = (init_right_height+240)/2;
 		final_width = -angle*(center_right_height - init_right_height) + center_right_width;
+		/*
     	printf("init_width: %d init_height: %d\n" , init_right_width,init_right_height);
 		printf("last_right_width:%d last_right_height: %d\n",right_width,right_height);
 		printf("center_right_width: %d center_right_height: %d\n",(init_right_width+right_width)/2,(init_right_height+right_height)/2);
 		printf("a:%0.2f\n" ,angle);
 		printf("line: %0.2f\n",line);
 		printf("width : %d, height : %d\n", center_right_width, center_right_height);
+		*/
         last_right_height = center_right_height;
 
         sub_center = 160 - center_right_width; 
@@ -1501,6 +1514,7 @@ int searchCurveDirection(int left_width, int left_height, int right_width, int r
 void driveLine()
 {
     int sub_center, steer_angle; 
+	 steer_angle = 1478;
 
     printf("Go straight!!!!!!!!!!!!!!!!!\n");
     CameraXServoControl_Write(1470);
