@@ -1025,10 +1025,12 @@ void *ControlThread(void *unused)
 //        else if(/*hill*/)
 //            flag = HILL;                //미정
 //        //switch()
-       switch(flag){
+        switch(flag){
             case CURVLINE:
                 printf("curve switch In!!\n");
                 curveLine(resHeight, resWidth, imgResult, last_width);  // 코너주행
+                SteeringServoControl_Write(1478);
+                printf("left : %d right : %d\n", left_gap, right_gap);
                 break;
             case EMERGSTOP:
                 emergStop();
@@ -1343,6 +1345,9 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 {
     int curve_flag, curve_temp, sub_center, steer_angle;
     int j, k;
+    
+    left_gap = 0;
+    right_gap = 0;
 
     curve_flag=0;
 
