@@ -904,37 +904,39 @@ void OverTaking(int direction_flag)
         {
 
 			   printf("Right turn");
-               // Winker_Write(LEFT_ON); //Right winker
+                Winker_Write(LEFT_ON); //Right winker
+			    usleep(1000000);
 				UserMove(1000, 390 * 12, 80);
 				UserMove(1950, 390 * 12, 80);
-			   // Winker_Write(ALL_OFF);
+			    Winker_Write(ALL_OFF);
 				UserMove(1478, 390 * 25, 80);
 
-				// Winker_Write(RIGHT_ON); //Left winker
+				Winker_Write(RIGHT_ON); //Left winker
+				usleep(1000000);
 				UserMove(1950, 390 * 12, 80);
 				UserMove(1000, 390 * 12, 80);
 				PositionControlOnOff_Write(UNCONTROL); // position controller OFF !!!
 				SteeringServoControl_Write(1478); //straight
-				// Winker_Write(ALL_OFF);
+     			Winker_Write(ALL_OFF);
 				DesireSpeed_Write(30);
 
 		}
         else //we need to turn left
         {
                 printf("Left turn");
-	            Winker_Write(ALL_OFF);
-				// Winker_Write(LEFT_ON); //Right winker
+	            Winker_Write(RIGHT_ON); //Left winker
+				usleep(1000000);
 				UserMove(1950, 390 * 12, 80);
 				UserMove(1000, 390 * 12, 80);
-				// Winker_Write(ALL_OFF);
+				Winker_Write(ALL_OFF);
 				UserMove(1478, 390 * 25, 80);
 
-				// Winker_Write(RIGHT_ON); //Left winker
+				Winker_Write(LEFT_ON); //Right winker
 				UserMove(1000, 390 * 12, 80);
 				UserMove(1950, 390 * 12, 80);
 				PositionControlOnOff_Write(UNCONTROL); // position controller OFF !!!
 				SteeringServoControl_Write(1478); //straight
-				// Winker_Write(ALL_OFF);
+				Winker_Write(ALL_OFF);
 				DesireSpeed_Write(30);
         }	
 }
