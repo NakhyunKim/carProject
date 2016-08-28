@@ -77,8 +77,9 @@ int center_num;
 int center_avg;
 int max;
 short corner_check;
-short distance_table[21][2] =
-{{5, 204}, {6, 199}, {7, 195}, {8, 191}, {9, 188},
+short distance_table[26][2] =
+{	{0, 240},{1, 234},{2, 225},{3, 217}, {4, 210},
+	{5, 204}, {6, 199}, {7, 195}, {8, 191}, {9, 188},
     {10, 184}, {11, 180} ,{12, 177}, {13, 174}, {14, 171},
     {15, 169}, {16, 166}, {17, 163}, {18, 161}, {19, 159},
     {20, 156}, {21, 154}, {22, 152}, {23, 150}, {24, 148},
@@ -638,7 +639,7 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
         if(left != 0 && right !=0)
         {
             //TODO 코너 검출 방법 바꿔줘야함
-            if(j < (resHeight/3)*2 && j > resHeight/2)
+            if(j < (resHeight/3)*2 && j > resHeight/3)
                 corner_check++;
             // 화면의 1/2지점에서 2/3 지점까지의 center pixel개수를 센다. 만약 일정 수 미만이면 코너 인식
             center=(right+left)/2;  // 왼쪽과 오른쪽 pixel의 중간값을 계산 = center값
@@ -703,7 +704,7 @@ static unsigned int CaptureThread(void *params)
             break;
         }
 
-        if(i%5 == 0)                        // once in three loop = 10 Hz
+        if(i%10 == 0)                        // once in three loop = 10 Hz
             pthread_cond_signal(&cond);        // ControlThread() is called
 
         pthread_mutex_unlock(&mutex);        // for ControlThread()
@@ -1333,6 +1334,7 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     int left_width, left_height;
     int right_width, right_height;
     int direction;
+	int in, out;
 
     curve_flag=0;
 
@@ -1388,41 +1390,55 @@ void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
     else last_height = right_height;
 
 	printf("direction : %d last_height : %d\n", direction, last_height);
-    for(j = 0; j < 20; j++)
+    for(j = 0; j < 26; j++)
     {
         if(distance_table[j][1] >= last_height )
         {
             if(distance_table[j+1][1] < last_height)
             {
-                encoder_value = distance_table[j][0]+31;
+                encoder_value = distance_table[j][0]+28;
                 //Nak
           //      printf("Stop!!!\n");
           //      printf("encoder_value : %d\n", encoder_value); //몇 센치 이동하는지 check
                 //~Nak
                 break;
             }
-        }
-    } //Table에서 움직인 거리 읽어옴
+		}
+	} //Table에서 움직인 거리 읽어옴
 
 	printf("encoder_value : %d\n", encoder_value);
-    if(encoder_flag)
-        UserMove(1, 1470, 10*encoder_value);
+	UserMove(1, 1470, 10*encoder_value);
 
-    if(direction) 
-    {
-        SteeringServoControl_Write(1000);
-        //encoder값 까지 가기
-    }
-    else 
-    {
-        SteeringServoControl_Write(1950);
-        //encoder값 까지 가기
-    }
+	if(direction) 
+	{
+		SteeringServoControl_Write(1000);
+		in = EncoderCounter_Read();
+		out = in;
+		out = out - in;
+		while(out < 10767)
+		{
+			out = EncoderCounter_Read();
+			out = out - in;
+		}
+	}
+	else 
+	{
+		SteeringServoControl_Write(1950);
+		//encoder값 까지 가기
+		in = EncoderCounter_Read();
+		out = in;
+		out = out - in;
+		while(out < 10767)
+		{
+			out = EncoderCounter_Read();
+			out = out - in;
+		}
+	}
 }
 
 int searchCurveDirection(int left_width, int left_height, int right_width, int right_height, IplImage* imgResult)
 {
-    char check_check;
+	char check_check;
 	int init_right_width=right_width, init_right_height=right_height;//기울기 구하기 위한 초기값 변수
 	int init_left_width=left_width, init_left_height=left_height;//기울기 구하기 위한 초기값 변수
     int i = 0;
