@@ -100,6 +100,10 @@ enum section
 enum section main_flag;
 //~Nak
 
+//[KANG] TrafficLight Global Variable
+int greenlight;
+int waiting;
+// [~KANG] 
 typedef struct
 {
     I2cId i2cDevice;                                        //enum
@@ -577,6 +581,21 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
                 imgResult->imageData[bin_num] = (char)0;
 
             }            
+
+            // [KEJ] Traffic Light
+            // Find the Number of Green Color Pixel on the Capture image
+            // And  'greenlight' variable
+
+            greenlight = 0;
+            if( u > 75 && u < 105 && v > 90  &&  v < 120) 
+            {
+                greenlight++;
+            }
+
+            if(greenlight > 30)
+            {
+                waiting = 0;
+            }
 
             img->imageData[num] = y;
             img->imageData[num+1] = u;
@@ -1424,7 +1443,25 @@ void overTaking()
 }
 void trafficLight()
 {
-
+    int speed;   
+    speed = DesireSpeed_Read();
+    if(speed==0 && waiting == 0)
+    {
+        if(greenlight > 500)
+        {
+            //printf("Right Go\n");
+            Winker_Write(LEFT_ON);
+            usleep(1000000);
+            Winker_Write(ALL_OFF);
+        }
+        else 
+        {
+            //printf("Left Go\n");
+            Winker_Write(RIGHT_ON);
+            usleep(1000000);
+            Winker_Write(ALL_OFF);
+        }
+    }
 }
 void hill()
 {

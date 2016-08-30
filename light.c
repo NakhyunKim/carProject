@@ -29,7 +29,7 @@
 #include <ResTable_720To320.h>
 #include <pthread.h>
 #include <unistd.h>     // for sleep
-#include "car_lib.h"
+#include "car_lib.h"f
 
 #define VIP_BUFFER_SIZE 6
 #define VIP_FRAME_TIMEOUT_MS 100
@@ -54,13 +54,13 @@ int table_208[256];
 int table_516[256];
 
 int greenlight=0;
-
+int waiting = 0;
 typedef struct
 {
     I2cId i2cDevice;
  
     CaptureInputDeviceId vipDeviceInUse;
-    NvMediaVideoCaptureInterfaceFormat vipInputtVideoStd;
+    NvMediaVideoCaptureInterfaceFormat vipInputlightVideoStd;
     unsigned int vipInputWidth;
     unsigned int vipInputHeight;
     float vipAspectRatio;
@@ -445,6 +445,10 @@ static int Frame2Ipl(IplImage* img, IplImage* result)
         stepV += pitchV[i];
     }
     //fclose(fd);
+    if(greenlight > 50) 
+        waiting = 1;
+    else 
+        waiting = 0;
     
     NvMediaVideoSurfaceUnlock(capSurf);
 
@@ -735,19 +739,22 @@ void *ControlThread(void *unused)
         printf("%d\n", greenlight);
         //speed = -10;
         //DesireSpeed_Write(speed);
-        if(flag == 1){ // RIGHT
+
+        if(waitiing)
+        { // RIGHT
             if(greenlight>500)
             {
+                // 
                 printf("right go\n");
                 Winker_Write(LEFT_ON);
                 usleep(1000000);
                 Winker_Write(ALL_OFF);
-               
+
                 state = SpeedControlOnOff_Read();
                 if(state==0)
                 {
-                    DesireSpeed_Write(50);
-                    SpeedControlOnOff_Write(CONTROL);   // speed Control ON
+                DesireSpeed_Write(50);
+                SpeedControlOnOff_Write(CONTROL);   // speed Control ON
                 }
 
                 state = PositionControlOnOff_Read();
@@ -755,16 +762,17 @@ void *ControlThread(void *unused)
                     PositionControlOnOff_Write(CONTROL);    // positionControl function ON 
 
                 state = DesireSpeed_Read();
-                if(state!=50)   DesireSpeed_Write(50);
+                if(state!=50)   
+                    DesireSpeed_Write(50);
 
                 EncoderCounter_Write(0);
 
-                distance = 1000*18/10;
+                
+                distance = 1100*18/10;
                 front_dis = distance+30;
 
-
- 			DesireEncoderCount_Write(300);
- 			SteeringServoControl_Write(1460);
+                DesireEncoderCount_Write(300);
+                SteeringServoControl_Write(1460);
                 temp = 300;
 
                 while(temp>31)
@@ -772,41 +780,25 @@ void *ControlThread(void *unused)
                     temp = DesireEncoderCount_Read();
                     usleep(500);
                 }
-			EncoderCounter_Write(0);
-
+                EncoderCounter_Write(0);
                 DesireEncoderCount_Write(front_dis);
-
                 temp = front_dis;
 
                 while(temp>31)
                 {
                     temp = DesireEncoderCount_Read();
-                    printf("[temp] %d\n", temp);
-                    if(temp>720)                     
-                    	SteeringServoControl_Write(1000);
-                   	else  
-                   		SteeringServoControl_Write(1460);
+                    if(temp>700)                     
+                        SteeringServoControl_Write(1000);
+                    else
+                        SteeringServoControl_Write(1460);
                     usleep(500);
                 }
 
                 PositionControlOnOff_Write(UNCONTROL);
                 DesireSpeed_Write(state);
-                sleep(1);
-
-
                 DesireSpeed_Write(0);
                 SpeedControlOnOff_Write(UNCONTROL);
-
-                /*
-                angle = 1400;
-                SteeringServoControl_Write(angle);
-                speed = 10;
-                DesireSpeed_Write(speed);
-                speed = DesireSpeed_Read();
-                printf("DesireSpeed_Read() = %d \n", speed);
-                sleep(1);
-                flag = 0;
-                */
+                return 0;
             }
             else //LEFT
             {
@@ -827,7 +819,8 @@ void *ControlThread(void *unused)
                     PositionControlOnOff_Write(CONTROL);    // positionControl function ON 
 
                 state = DesireSpeed_Read();
-                if(state!=50)   DesireSpeed_Write(50);
+                if(state!=50)   
+                    DesireSpeed_Write(50);
 
                 EncoderCounter_Write(0);
 
@@ -835,8 +828,8 @@ void *ControlThread(void *unused)
                 front_dis = distance+30;
 
 
- 			DesireEncoderCount_Write(300);
- 			SteeringServoControl_Write(1460);
+                DesireEncoderCount_Write(300);
+                SteeringServoControl_Write(1460);
                 temp = 300;
 
                 while(temp>31)
@@ -844,45 +837,25 @@ void *ControlThread(void *unused)
                     temp = DesireEncoderCount_Read();
                     usleep(500);
                 }
-			EncoderCounter_Write(0);
-
+                EncoderCounter_Write(0);
                 DesireEncoderCount_Write(front_dis);
-
                 temp = front_dis;
 
                 while(temp>31)
                 {
                     temp = DesireEncoderCount_Read();
-                    printf("[temp] %d\n", temp);
                     if(temp>700)                     
-                    	SteeringServoControl_Write(1950);
-                   	else  
-                   		SteeringServoControl_Write(1460);
+                        SteeringServoControl_Write(1950);
+                    else  
+                        SteeringServoControl_Write(1460);
                     usleep(500);
                 }
 
                 PositionControlOnOff_Write(UNCONTROL);
                 DesireSpeed_Write(state);
-                sleep(1);
-
-
                 DesireSpeed_Write(0);
                 SpeedControlOnOff_Write(UNCONTROL);
                 return 0;
-                /*
-                speed = 20;
-                DesireSpeed_Write(speed);
-                usleep(1300000);
-                angle = 1950;
-                SteeringServoControl_Write(angle);
-                usleep(5000000);
-                angle = 1460;
-                SteeringServoControl_Write(angle);
-                usleep(1000000);
-                speed = 0;
-                DesireSpeed_Write(speed);
-                flag = 0;
-                */
             }
         }
         // ---------------------------------------------------------------------
