@@ -100,6 +100,8 @@ enum section
 enum section main_flag;
 //~Nak
 
+int red;
+
 typedef struct
 {
     I2cId i2cDevice;                                        //enum
@@ -547,6 +549,7 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
     stepV = 0;
     i = 0;
 
+    red = 0;
     for(j = 0; j < resHeight; j++)
     {
         for(k = 0; k < resWidth; k++)
@@ -571,6 +574,12 @@ static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
                 // 흰색으로
                 imgResult->imageData[bin_num] = (char)255;
 
+            }
+            //width:101 height:127 u:115 v:-88
+            else if( 110 < u && u < 130 && -103 < v && v < -73) {
+                red++;
+                if(red > 300) 
+                    emergStop();
             }
             else {
                 // 검정색으로
@@ -1404,7 +1413,7 @@ void driveLine()
 
 void emergStop()
 {
-
+    DesireEncoderCount_Write(0);
 }
 void parkFirst()
 {
