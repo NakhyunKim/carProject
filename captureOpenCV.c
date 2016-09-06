@@ -481,165 +481,164 @@ static int DumpFrame(FILE *fout, NvMediaVideoSurface *surf)
 
 static int Frame2Ipl(IplImage* img, IplImage* imgResult, IplImage* imgCenter)
 {
-	unsigned char status, gain;
-	short speed;
-	NvMediaVideoSurfaceMap surfMap;
-	unsigned int resWidth, resHeight;
+    unsigned char status, gain;
+    short speed;
+    NvMediaVideoSurfaceMap surfMap;
+    unsigned int resWidth, resHeight;
 
-	short both_side = 0;    //차선 검출 위한 변수
-	char check_side = 0;    //차선 검출 위한 변수 
-	short center = 0, left = 0, right = 0;
-	int num;
-	unsigned char y,u,v;
-	int start_cnt = 0;
+    short both_side = 0;    //차선 검출 위한 변수
+    char check_side = 0;    //차선 검출 위한 변수 
+    short center = 0, left = 0, right = 0;
+    int num;
+    unsigned char y,u,v;
+    int start_cnt = 0;
 
-	if(NvMediaVideoSurfaceLock(capSurf, &surfMap) != NVMEDIA_STATUS_OK)
-	{
-		MESSAGE_PRINTF("NvMediaVideoSurfaceLock() failed in Frame2Ipl()\n");
-		return 0;
-	}
+    if(NvMediaVideoSurfaceLock(capSurf, &surfMap) != NVMEDIA_STATUS_OK)
+    {
+        MESSAGE_PRINTF("NvMediaVideoSurfaceLock() failed in Frame2Ipl()\n");
+        return 0;
+    }
 
-	unsigned char *pY[2] = {surfMap.pY, surfMap.pY2};
-	unsigned char *pU[2] = {surfMap.pU, surfMap.pU2};
-	unsigned char *pV[2] = {surfMap.pV, surfMap.pV2};
-	unsigned int pitchY[2] = {surfMap.pitchY, surfMap.pitchY2};
-	unsigned int pitchU[2] = {surfMap.pitchU, surfMap.pitchU2};
-	unsigned int pitchV[2] = {surfMap.pitchV, surfMap.pitchV2};
-	unsigned int i, j, k, x;
-	unsigned int stepY, stepU, stepV;
-	unsigned int bin_num=0;
-	//Nak Add
-	int temp1;
-	int temp2;
-	int min;
-	int flag = 0;
-	int tmp_center = 0;
-	//~Nak
-	resWidth = RESIZE_WIDTH;
-	resHeight = RESIZE_HEIGHT;
+    unsigned char *pY[2] = {surfMap.pY, surfMap.pY2};
+    unsigned char *pU[2] = {surfMap.pU, surfMap.pU2};
+    unsigned char *pV[2] = {surfMap.pV, surfMap.pV2};
+    unsigned int pitchY[2] = {surfMap.pitchY, surfMap.pitchY2};
+    unsigned int pitchU[2] = {surfMap.pitchU, surfMap.pitchU2};
+    unsigned int pitchV[2] = {surfMap.pitchV, surfMap.pitchV2};
+    unsigned int i, j, k, x;
+    unsigned int stepY, stepU, stepV;
+    unsigned int bin_num=0;
+    //Nak Add
+    int temp1;
+    int temp2;
+    int min;
+    int flag = 0;
+    int tmp_center = 0;
+    //~Nak
+    resWidth = RESIZE_WIDTH;
+    resHeight = RESIZE_HEIGHT;
 
-	// Frame2Ipl
-	img->nSize = 112;
-	img->ID = 0;
-	img->nChannels = 3;
-	img->alphaChannel = 0;
-	img->depth = IPL_DEPTH_8U;
-	img->colorModel[0] = 'v';
-	img->colorModel[1] = 'U';
-	img->colorModel[2] = 'V';
-	img->channelSeq[0] = 'Y';
-	img->channelSeq[1] = 'U';
-	img->channelSeq[2] = 'V';
-	img->dataOrder = 0;
-	img->origin = 0;
-	img->align = 4;
-	img->width = resWidth;
-	img->height = resHeight;
-	img->imageSize = resHeight*resWidth*3;
-	img->widthStep = resWidth*3;
-	img->BorderMode[0] = 0;
-	img->BorderMode[1] = 0;
-	img->BorderMode[2] = 0;
-	img->BorderMode[3] = 0;
-	img->BorderConst[0] = 0;
-	img->BorderConst[1] = 0;
-	img->BorderConst[2] = 0;
-	img->BorderConst[3] = 0;
+    // Frame2Ipl
+    img->nSize = 112;
+    img->ID = 0;
+    img->nChannels = 3;
+    img->alphaChannel = 0;
+    img->depth = IPL_DEPTH_8U;
+    img->colorModel[0] = 'v';
+    img->colorModel[1] = 'U';
+    img->colorModel[2] = 'V';
+    img->channelSeq[0] = 'Y';
+    img->channelSeq[1] = 'U';
+    img->channelSeq[2] = 'V';
+    img->dataOrder = 0;
+    img->origin = 0;
+    img->align = 4;
+    img->width = resWidth;
+    img->height = resHeight;
+    img->imageSize = resHeight*resWidth*3;
+    img->widthStep = resWidth*3;
+    img->BorderMode[0] = 0;
+    img->BorderMode[1] = 0;
+    img->BorderMode[2] = 0;
+    img->BorderMode[3] = 0;
+    img->BorderConst[0] = 0;
+    img->BorderConst[1] = 0;
+    img->BorderConst[2] = 0;
+    img->BorderConst[3] = 0;
 
-	stepY = 0;
-	stepU = 0;
-	stepV = 0;
-	i = 0;
+    stepY = 0;
+    stepU = 0;
+    stepV = 0;
+    i = 0;
 
-	for(j = 0; j < resHeight; j++)
-	{
-		for(k = 0; k < resWidth; k++)
-		{
-			imgCenter->imageData[j*imgCenter->widthStep + k]=0;
-		}
-	}
+    for(j = 0; j < resHeight; j++)
+    {
+        for(k = 0; k < resWidth; k++)
+        {
+            imgCenter->imageData[j*imgCenter->widthStep + k]=0;
+        }
+    }
 
-	for(j = 0; j < resHeight; j++)
-	{
-		for(k = 0; k < resWidth; k++)
-		{
-			x = ResTableX_720To320[k];
-			y = pY[i][stepY+x];
-			u = pU[i][stepU+x/2];
-			v = pV[i][stepV+x/2];
+    for(j = 0; j < resHeight; j++)
+    {
+        for(k = 0; k < resWidth; k++)
+        {
+            x = ResTableX_720To320[k];
+            y = pY[i][stepY+x];
+            u = pU[i][stepU+x/2];
+            v = pV[i][stepV+x/2];
 
-			// - 39 , 111 , 51, 241 
-			num = 3*k+3*resWidth*(j);
-			bin_num = j*imgResult->widthStep + k;
-			if( u>-39  &&  u<120  &&  v>45   &&   v<245  ) {
-				// 흰색으로
-				imgResult->imageData[bin_num] = (char)255;
+            // - 39 , 111 , 51, 241 
+            num = 3*k+3*resWidth*(j);
+            bin_num = j*imgResult->widthStep + k;
+            if( u>-39  &&  u<120  &&  v>45   &&   v<245  ) {
+                // 흰색으로
+                imgResult->imageData[bin_num] = (char)255;
 
-			}
-			else {
-				// 검정색으로
-				imgResult->imageData[bin_num] = (char)0;
+            }
+            else {
+                // 검정색으로
+                imgResult->imageData[bin_num] = (char)0;
 
-			}            
+            }            
 
-			img->imageData[num] = y;
-			img->imageData[num+1] = u;
-			img->imageData[num+2] = v;
+            img->imageData[num] = y;
+            img->imageData[num+1] = u;
+            img->imageData[num+2] = v;
 
-		}
-		stepY += pitchY[i];
-		stepU += pitchU[i];
-		stepV += pitchV[i];
-	}
+        }
+        stepY += pitchY[i];
+        stepU += pitchU[i];
+        stepV += pitchV[i];
+    }
 
-	cvDilate(imgResult,imgResult,0,1);
-	cvErode(imgResult,imgResult,0,2);
+    cvDilate(imgResult,imgResult,0,1);
+    cvErode(imgResult,imgResult,0,2);
 
-	center_total = 0;
-	center_num = 1;
-	corner_check = 0;
+    center_total = 0;
+    center_num = 1;
+    corner_check = 0;
 
-	for(j =(resHeight/3); j < resHeight; j++)
-	{
-		left = 0;
-		right = 0;
-		center =0;
-		for( k = (resWidth / 2) ; k >0 ; k--)
-		{           
-			if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
-			{
-				left=k;
-				break;
-			}
-		} // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
+    for(j =(resHeight/3); j < resHeight; j++)
+    {
+        left = 0;
+        right = 0;
+        center =0;
+        for( k = (resWidth / 2) ; k >0 ; k--)
+        {           
+            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
+            {
+                left=k;
+                break;
+            }
+        } // 중앙에서 왼쪽으로 움직이며 최초의 255값을 찾는다. 찾으면 break
 
-		for( k = (resWidth / 2) ; k< resWidth ; k++)
-		{
-			if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
-			{
-				right=k;
-				break;
-			}
-		} // 
+        for( k = (resWidth / 2) ; k< resWidth ; k++)
+        {
+            if(imgResult->imageData[j*imgResult->widthStep + k] == (char) 255)
+            {
+                right=k;
+                break;
+            }
+        } // 
 
-		if(left != 0 && right !=0)
-		{
-			//TODO 코너 검출 방법 바꿔줘야함
-			if(j < (resHeight/3)*2 && j > resHeight/2)
-				corner_check++;
-			// 화면의 1/2지점에서 2/3 지점까지의 center pixel개수를 센다. 만약 일정 수 미만이면 코너 인식
-			center=(right+left)/2;  // 왼쪽과 오른쪽 pixel의 중간값을 계산 = center값
-			center_total += center; // center값의 총 합을 더한다.
-			center_num++;           // center값의 총합에 center값의 총 수를 나눠 주기 위해 개수를 센다.
-			imgCenter->imageData[j*imgCenter->widthStep + center] = (char)255;
-			// center가 어딘지를 확인하기 위해 영상에 저장
-		}
-	}
-	data = DistanceSensor(1);
+        if(left != 0 && right !=0)
+        {
+            //TODO 코너 검출 방법 바꿔줘야함
+            if(j < (resHeight/3)*2 && j > resHeight/2)
+                corner_check++;
+            // 화면의 1/2지점에서 2/3 지점까지의 center pixel개수를 센다. 만약 일정 수 미만이면 코너 인식
+            center=(right+left)/2;  // 왼쪽과 오른쪽 pixel의 중간값을 계산 = center값
+            center_total += center; // center값의 총 합을 더한다.
+            center_num++;           // center값의 총합에 center값의 총 수를 나눠 주기 위해 개수를 센다.
+            imgCenter->imageData[j*imgCenter->widthStep + center] = (char)255;
+                                    // center가 어딘지를 확인하기 위해 영상에 저장
+        }
+    }
 
-	NvMediaVideoSurfaceUnlock(capSurf);
+    NvMediaVideoSurfaceUnlock(capSurf);
 
-	return 1;
+    return 1;
 }
 
 static unsigned int CaptureThread(void *params)
@@ -1338,7 +1337,8 @@ fail: // Run down sequence
 	return err;
 }
 
-/*void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
+/*
+void curveLine(int resHeight, int resWidth, IplImage* imgResult, int last_width)
 {
 	int curve_flag, curve_temp, sub_center, steer_angle;
 	int j, k;
